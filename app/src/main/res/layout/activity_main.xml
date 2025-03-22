@@ -23,31 +23,49 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:contentDescription="@string/shuff_btn"
-                android:drawableTop="@drawable/shuffle_icon" />
+                android:drawableTop="@drawable/shuffle_icon"
+                android:text="@string/shuff_btn"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                />
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:contentDescription="@string/favorite_btn"
-                android:drawableTop="@drawable/favorite_icon" />
+                android:drawableTop="@drawable/favorite_icon"
+                android:text="@string/favorite_btn"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                />
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:contentDescription="@string/playlist_btn"
-                android:drawableTop="@drawable/playlist_icon" />
+                android:drawableTop="@drawable/playlist_icon"
+                android:text="@string/playlist_btn"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                />
 
         </LinearLayout>
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"/>
+            android:layout_margin="10dp"
+            android:text="@string/total_song"
+            android:textColor="@color/black"
+            />
 
         <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+
+            />
+
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

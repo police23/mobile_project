@@ -3,6 +3,7 @@
     <string name="shuff_btn">Shuffle</string>
     <string name="favorite_btn">Favorites</string>
     <string name="playlist_btn">Playlists</string>
+    <string name="total_song">Total Songs</string>
     <string name="song_name">Song Name</string>
     <string name="back_btn">Back</string>
     <string name="start_tv">00:00</string>

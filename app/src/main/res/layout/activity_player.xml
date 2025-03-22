@@ -6,7 +6,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".PlayerActivity"
     android:orientation="vertical"
-    android:gravity="center">
+    android:gravity="center"
+    >
 
     <!--    First Row-->
     <LinearLayout
@@ -14,40 +15,38 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_weight="1">
+>
 
         <!--    Back Button-->
         <ImageButton
-            android:id="@+id/backBtnPA"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:src="@drawable/back_icon"
-            android:background="?attr/selectableItemBackground"
+            android:background="@android:color/transparent"
             android:layout_marginStart="5dp"
-            android:contentDescription="@string/back_btn"
-            app:tint="?colorOnPrimary"
-            android:padding="10dp" />
+            app:tint="@color/black"
+            />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:textColor="?colorOnPrimary"
-            android:text="@string/world_of_music"
-            android:textSize="20sp"
-            android:gravity="center"
             android:layout_weight="1"
-            tools:ignore="NestedWeights"
-            android:textStyle="bold"/>
+            android:gravity="center"
+            android:text="@string/world_of_music"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
 
         <ImageButton
             android:id="@+id/favouriteBtnPA"
-            android:layout_width="50dp"
+            android:layout_width="wrap_content"
             android:layout_height="50dp"
-            android:src="@drawable/favorite_emp_icon"
-            android:background="?attr/selectableItemBackground"
             android:layout_marginEnd="20dp"
+            android:background="@android:color/transparent"
             android:contentDescription="@string/favourite_btn"
+            android:src="@drawable/favorite_emp_icon"
             app:tint="@android:color/holo_red_dark" />
+
     </LinearLayout>
 
     <!--    Current Song Image-->
@@ -57,7 +56,7 @@
         android:layout_height="250dp"
         android:layout_margin="10dp"
         android:padding="5dp"
-        android:src="@drawable/music_player_icon_screen"
+        android:src="@mipmap/music_player_icon_foreground"
         app:shapeAppearanceOverlay="@style/curved"
         app:strokeColor="@color/cool_blue"
         app:strokeWidth="5dp"/>
@@ -70,7 +69,7 @@
         android:layout_marginHorizontal="20dp"
         android:text="@string/song_name"
         android:textSize="18sp"
-        android:textColor="?colorOnPrimary"
+        android:textColor="@color/black"
         android:gravity="center"
         android:layout_weight="1"
         android:textIsSelectable="true" />
@@ -86,11 +85,11 @@
 
         <!--        Previous Button-->
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/previousBtnPA"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
             app:icon="@drawable/previous_icon"
-            app:iconSize="40dp"/>
+            app:iconSize="40dp"
+            />
 
         <!--        Play & Pause Button-->
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -125,7 +124,7 @@
             android:id="@+id/tvSeekBarStart"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textColor="?colorOnPrimary"
+            android:textColor="@color/black"
             android:textSize="15sp"
             android:text="@string/start_tv"
             android:gravity="center"/>
@@ -141,7 +140,7 @@
             android:id="@+id/tvSeekBarEnd"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textColor="?colorOnPrimary"
+            android:textColor="@color/black"
             android:textSize="15sp"
             android:text="@string/end_tv"
             android:gravity="center"/>
@@ -166,7 +165,6 @@
             android:layout_weight="1"
             tools:ignore="NestedWeights"
             app:tint="@color/cool_pink" />
-
 
         <!--        Timer Button-->
         <ImageButton
