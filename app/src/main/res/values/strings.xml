@@ -13,4 +13,17 @@
     <string name="title_activity_player">PlayerActivity</string>
     <string name="favourite_btn">Favorite</string>
     <string name="world_of_music">Music</string>
+    <string name="title_activity_favourite">FavouriteActivity</string>
+    <string name="title_activity_playlist">PlaylistActivity</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
+    <string name="app_icon">Icon</string>
+    <string name="text_nav">Xin chào bạn</string>
+    <string name="settings">Cài đặt</string>
+    <string name="about">Về chúng tôi</string>
+    <string name="exit">Thoát</string>
+
+
+
+
 </resources>
