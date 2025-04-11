@@ -93,6 +93,7 @@
 
         <!--        Play & Pause Button-->
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+
             android:id="@+id/playPauseBtnPA"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
