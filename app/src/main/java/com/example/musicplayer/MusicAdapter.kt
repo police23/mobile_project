@@ -27,7 +27,7 @@ class MusicAdapter(private val context: Context, private val musicList: ArrayLis
     override fun onBindViewHolder(holder: MusicAdapter.MyHolder, position: Int) {
         holder.title.text = musicList[position].title
         holder.album.text = musicList[position].album
-        holder.duration.text = formatDuration(musicList[position].duration)
+        holder.duration.text = musicList[position].duration.toString()
         Glide.with(context)
             .load(musicList[position].artUri)
             .apply(RequestOptions().placeholder(R.drawable.music_player_icon_screen).centerCrop())

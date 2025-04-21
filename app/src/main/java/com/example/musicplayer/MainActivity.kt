@@ -1,133 +1,100 @@
 package com.example.musicplayer
 
-import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.MenuItem
 import android.widget.Toast
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.musicplayer.databinding.ActivityMainBinding
-import java.io.File
+import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var toggle: ActionBarDrawerToggle
-    private lateinit var musicAdapter: MusicAdapter
-
     companion object {
-        lateinit var MusicListMA : ArrayList<Music>
+        var MusicListMA = ArrayList<Music>()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        initializeLayout()
-
-
-        binding.shuffleBtn.setOnClickListener {
-            val intent = Intent(this@MainActivity, PlayerActivity::class.java)
-            startActivity(intent)
-        }
-        binding.favoriteBtn.setOnClickListener {
-            val intent = Intent(this@MainActivity, FavouriteActivity::class.java)
-            startActivity(intent)
-        }
-        binding.playlistBtn.setOnClickListener {
-            val intent = Intent(this@MainActivity, PlaylistActivity::class.java)
-            startActivity(intent)
-        }
-        binding.navView.setNavigationItemSelectedListener {
-            when(it.itemId) {
-                R.id.navSettings -> Toast.makeText(baseContext, "Cài đặt", Toast.LENGTH_SHORT).show()
-
-                R.id.navAbout -> Toast.makeText(baseContext, "Về chúng tôi", Toast.LENGTH_SHORT).show()
-                R.id.navExit -> finish()
-            }
-            true
-
-        }
-
-
+        setContentView(R.layout.activity_main) // Set the main layout
+        requestRuntimePermission()
     }
-    private fun requestRuntimePermission(){
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 13)
+
+    private fun requestRuntimePermission() {
+        val permissions = arrayOf(
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            android.Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+        if (permissions.any { ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
+            ActivityCompat.requestPermissions(this, permissions, 13)
+        } else {
+            loadMusic() // Call a separate function to load music
         }
     }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray,
-        deviceId: Int
+        grantResults: IntArray
     ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 13) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                Toast.makeText(this, "Granted", Toast.LENGTH_SHORT).show()
-            else ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 13)
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                Toast.makeText(this, "Permissions Granted", Toast.LENGTH_SHORT).show()
+                loadMusic() // Call a separate function to load music
+            } else {
+                Toast.makeText(this, "Permissions Denied", Toast.LENGTH_SHORT).show()
+            }
         }
-
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (toggle.onOptionsItemSelected(item))
-            return true
-        return super.onOptionsItemSelected(item)
+    private fun loadMusic() {
+        MusicListMA = getAllAudio() ?: ArrayList() // Ensure MusicListMA is not null
+        if (MusicListMA.isEmpty()) {
+            Toast.makeText(this, "No music found", Toast.LENGTH_SHORT).show()
+        }
+        // Initialize RecyclerView with MusicAdapter regardless of list content
+        val recyclerView = findViewById<RecyclerView>(R.id.musicRV)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = MusicAdapter(this, MusicListMA)
     }
-
-    @SuppressLint("SetTextI18n")
-    private fun initializeLayout() {
-        requestRuntimePermission()
-        setTheme(R.style.Theme_MusicPlayer)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        toggle = ActionBarDrawerToggle(this, binding.root, R.string.open, R.string.close)
-        binding.root.addDrawerListener(toggle)
-        toggle.syncState()
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        val musicList = ArrayList<String>()
-        MusicListMA = getAllAudio()
-        binding.musicRV.setHasFixedSize(true)
-        binding.musicRV.setItemViewCacheSize(13)
-        binding.musicRV.layoutManager = LinearLayoutManager(this@MainActivity)
-        musicAdapter = MusicAdapter(this@MainActivity, MusicListMA)
-        binding.musicRV.adapter = musicAdapter
-        binding.totalSongs.text = "Số bài hát : " + musicAdapter.itemCount
-
-    }
-    @SuppressLint("Range")
-    private fun getAllAudio() : ArrayList<Music> {
-        val tempList = ArrayList<Music>()
-        val selection = MediaStore.Audio.Media.IS_MUSIC + " != 0"
-        val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.DATE_ADDED, MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.ALBUM_ID)
-        val cursor = this.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, selection, null, MediaStore.Audio.Media.DATE_ADDED + " DESC", null )
-        if (cursor != null) {
-            if (cursor.moveToFirst())
+    
+    private fun getAllAudio(): ArrayList<Music>? {
+        val musicList = ArrayList<Music>()
+        val contentResolver = contentResolver
+        val uri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        val projection = arrayOf(
+            android.provider.MediaStore.Audio.Media._ID,
+            android.provider.MediaStore.Audio.Media.TITLE,
+            android.provider.MediaStore.Audio.Media.ALBUM,
+            android.provider.MediaStore.Audio.Media.ARTIST,
+            android.provider.MediaStore.Audio.Media.DATA,
+            android.provider.MediaStore.Audio.Media.DURATION,
+            android.provider.MediaStore.Audio.Media.ALBUM_ID
+        )
+        // Removed folder filtering to load all audio files
+        val cursor = contentResolver.query(uri, projection, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
                 do {
-                    var titleC = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE))
-                    var idC = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media._ID))
-                    var albumC = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM))
-                    var artistC = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST))
-                    var pathC = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA))
-                    var durationC = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION))
-                    var albumIdC = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)).toString()
-                    val uri = Uri.parse("content://media/external/audio/albumart")
-                    val artUriC = Uri.withAppendedPath(uri, albumIdC).toString()
-                    val music = Music(id = idC, title = titleC, album = albumC, artist = artistC, path = pathC, duration = durationC, artUri = artUriC)
-                    val file = File(music.path)
-                    if (file.exists())
-                        tempList.add(music)
-
-                } while (cursor.moveToNext())
-                cursor.close()
+                    val id = it.getString(it.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media._ID))
+                    val title = it.getString(it.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.TITLE))
+                    val album = it.getString(it.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.ALBUM))
+                    val artist = it.getString(it.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.ARTIST))
+                    val path = it.getString(it.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.DATA))
+                    val duration = it.getLong(it.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.DURATION))
+                    val artUri = Uri.withAppendedPath(
+                        Uri.parse("content://media/external/audio/albumart"),
+                        it.getString(it.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.ALBUM_ID))
+                    ).toString()
+    
+                    val music = Music(id, title, album, artist, path, duration, artUri)
+                    musicList.add(music)
+                } while (it.moveToNext())
+            }
         }
-        return tempList
+        return musicList
     }
 }

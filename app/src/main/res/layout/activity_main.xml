@@ -32,7 +32,7 @@
                 android:text="Shuffle"
                 android:textColor="@color/black"
                 android:textAllCaps="false"/>
-                />
+            <!-- ...existing code removed extra closing tag ... -->
 
             <Button
                 android:id="@+id/favoriteBtn"
@@ -57,7 +57,7 @@
                 android:text="Playlists"
                 android:textColor="@color/black"
                 android:textAllCaps="false"/>
-                />
+            <!-- ...existing code removed extra closing tag ... -->
 
         </LinearLayout>
         <TextView
@@ -75,14 +75,12 @@
             android:layout_height="match_parent"
             />
 
-
     </LinearLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navView"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header"
