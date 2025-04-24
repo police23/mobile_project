@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.example.musicplayer.database.MusicDatabaseHelper
 import com.example.musicplayer.databinding.ActivityPlayerBinding
 
 class PlayerActivity : AppCompatActivity() {
@@ -17,25 +18,77 @@ class PlayerActivity : AppCompatActivity() {
         var songPosition = 0
         var mediaPlayer : MediaPlayer? = null
         var isPlaying : Boolean = false
+
+        fun togglePlayback() {
+            mediaPlayer?.let {
+                if (isPlaying) {
+                    it.pause()
+                    isPlaying = false
+                } else {
+                    it.start()
+                    isPlaying = true
+                }
+            }
+        }
+        fun nextSongControl() {
+            if (musicListPA.isNotEmpty()) {
+                songPosition = (songPosition + 1) % musicListPA.size
+                mediaPlayer?.reset()
+                try {
+                    mediaPlayer?.setDataSource(musicListPA[songPosition].path)
+                    mediaPlayer?.prepare()
+                    mediaPlayer?.start()
+                    isPlaying = true
+                } catch (e: Exception) { }
+            }
+        }
+        fun prevSongControl() {
+            if (musicListPA.isNotEmpty()) {
+                songPosition = if (songPosition == 0) musicListPA.size - 1 else songPosition - 1
+                mediaPlayer?.reset()
+                try {
+                    mediaPlayer?.setDataSource(musicListPA[songPosition].path)
+                    mediaPlayer?.prepare()
+                    mediaPlayer?.start()
+                    isPlaying = true
+                } catch (e: Exception) { }
+            }
+        }
     }
 
     private var repeatMode = 0  // 0: off, 1: repeat all, 2: repeat one
     private var timerRunnable: Runnable? = null
     private lateinit var binding: ActivityPlayerBinding
     private val handler = Handler()
+    private lateinit var dbHelper: MusicDatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(R.style.Theme_MusicPlayer)
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        dbHelper = MusicDatabaseHelper(this)
+
+        // Added back button click listener
+        binding.backBtnPA.setOnClickListener { finish() }
+
         initializeLayout()
+        updateFavoriteIcon()
+
+        binding.favouriteBtnPA.setOnClickListener {
+            val currentMusic = musicListPA[songPosition]
+            currentMusic.isFavorite = !currentMusic.isFavorite
+            updateFavoriteIcon()
+            dbHelper.updateFavoriteStatus(currentMusic)
+            Toast.makeText(this,
+                if (currentMusic.isFavorite) "Added to favorites" else "Removed from favorites",
+                Toast.LENGTH_SHORT).show()
+        }
 
         binding.playPauseBtnPA.setOnClickListener {
             if (isPlaying) pauseMusic() else playMusic()
         }
 
-        // Updated repeat button: cycles through off -> repeat all -> repeat one -> off
         binding.repeatBtnPA.setOnClickListener {
             when (repeatMode) {
                 0 -> {
@@ -53,7 +106,7 @@ class PlayerActivity : AppCompatActivity() {
                 2 -> {
                     repeatMode = 0
                     mediaPlayer?.isLooping = false
-                    binding.repeatBtnPA.setImageResource(R.drawable.repeat_off_icon) // original icon for off mode
+                    binding.repeatBtnPA.setImageResource(R.drawable.repeat_off_icon)
                     Toast.makeText(this, "Repeat Off", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -105,8 +158,7 @@ class PlayerActivity : AppCompatActivity() {
             mediaPlayer!!.prepare()
             binding.tvSeekBarStart.text = formatDuration(mediaPlayer!!.currentPosition)
             binding.tvSeekBarEnd.text = formatDuration(mediaPlayer!!.duration)
-            
-            // Set completion listener based on repeat mode
+
             if (repeatMode == 1) {
                 mediaPlayer!!.setOnCompletionListener {
                     songPosition = (songPosition + 1) % musicListPA.size
@@ -116,8 +168,7 @@ class PlayerActivity : AppCompatActivity() {
             } else {
                 mediaPlayer!!.setOnCompletionListener(null)
             }
-            
-            // For repeat one mode, looping is enabled; otherwise, ensure it is off.
+
             if (repeatMode != 2) mediaPlayer!!.isLooping = false
 
             mediaPlayer!!.start()
@@ -150,10 +201,29 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun initializeLayout() {
-        songPosition = intent.getIntExtra("index", 0)
-        when (intent.getStringExtra("class")) {
+        val newIndex = intent.getIntExtra("index", 0)
+        val intentClass = intent.getStringExtra("class")
+        when (intentClass) {
             "MusicAdapter" -> {
                 musicListPA = ArrayList(MainActivity.MusicListMA)
+                if (mediaPlayer != null && songPosition == newIndex && isPlaying) {
+                    setLayout() // update UI without resetting playback
+                } else {
+                    songPosition = newIndex
+                    setLayout()
+                    createMediaPlayer() // start new song or reinitialize
+                }
+            }
+            "MiniPlayer" -> {
+                setLayout()
+                mediaPlayer?.let {
+                    binding.tvSeekBarStart.text = formatDuration(it.currentPosition)
+                    binding.tvSeekBarEnd.text = formatDuration(it.duration)
+                    binding.seekBarPA.max = it.duration
+                    updateSeekBar()
+                }
+            }
+            else -> {
                 setLayout()
                 createMediaPlayer()
             }
@@ -172,10 +242,16 @@ class PlayerActivity : AppCompatActivity() {
         mediaPlayer!!.pause()
     }
 
+    private fun updateFavoriteIcon() {
+        val currentMusic = musicListPA[songPosition]
+        if (currentMusic.isFavorite)
+            binding.favouriteBtnPA.setImageResource(R.drawable.favorite_filled_icon)
+        else
+            binding.favouriteBtnPA.setImageResource(R.drawable.favorite_emp_icon)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        mediaPlayer?.release()
-        mediaPlayer = null
         handler.removeCallbacksAndMessages(null)
     }
 }

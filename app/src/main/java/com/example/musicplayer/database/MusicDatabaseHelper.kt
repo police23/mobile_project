@@ -12,7 +12,7 @@ class MusicDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
 
     companion object {
         private const val DATABASE_NAME = "MusicPlayer.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2 // bumped version
         private const val TAG = "MusicDatabaseHelper"
 
         private const val TABLE_MUSIC = "Music"
@@ -23,6 +23,7 @@ class MusicDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         private const val COLUMN_PATH = "path"
         private const val COLUMN_DURATION = "duration"
         private const val COLUMN_ART_URI = "artUri"
+        private const val COLUMN_FAVORITE = "favorite" // new column for favorite flag
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -35,7 +36,8 @@ class MusicDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                     $COLUMN_ARTIST TEXT,
                     $COLUMN_PATH TEXT,
                     $COLUMN_DURATION INTEGER,
-                    $COLUMN_ART_URI TEXT
+                    $COLUMN_ART_URI TEXT,
+                    $COLUMN_FAVORITE INTEGER DEFAULT 0
                 )
             """
             db?.execSQL(createTableQuery)
@@ -73,6 +75,7 @@ class MusicDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                     put(COLUMN_PATH, music.path)
                     put(COLUMN_DURATION, music.duration)
                     put(COLUMN_ART_URI, music.artUri)
+                    put(COLUMN_FAVORITE, if (music.isFavorite) 1 else 0) // save favorite flag
                 }
                 db.insertWithOnConflict(TABLE_MUSIC, null, values, SQLiteDatabase.CONFLICT_REPLACE)
             }
@@ -99,6 +102,7 @@ class MusicDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                     val pathIdx = cursor.getColumnIndexOrThrow(COLUMN_PATH)
                     val durationIdx = cursor.getColumnIndexOrThrow(COLUMN_DURATION)
                     val artUriIdx = cursor.getColumnIndexOrThrow(COLUMN_ART_URI)
+                    val favoriteIdx = cursor.getColumnIndexOrThrow(COLUMN_FAVORITE)
                     
                     do {
                         try {
@@ -109,7 +113,8 @@ class MusicDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                                 artist = cursor.getString(artistIdx),
                                 path = cursor.getString(pathIdx),
                                 duration = cursor.getLong(durationIdx),
-                                artUri = cursor.getString(artUriIdx)
+                                artUri = cursor.getString(artUriIdx),
+                                isFavorite = (cursor.getInt(favoriteIdx) == 1)  // load favorite flag
                             )
                             musicList.add(music)
                         } catch (e: Exception) {
@@ -124,5 +129,14 @@ class MusicDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         }
         
         return musicList
+    }
+
+    fun updateFavoriteStatus(music: Music) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_FAVORITE, if(music.isFavorite) 1 else 0)
+        }
+        // Update the row matching the song id
+        db.update(TABLE_MUSIC, values, "$COLUMN_ID = ?", arrayOf(music.id))
     }
 }

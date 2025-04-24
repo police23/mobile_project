@@ -32,7 +32,6 @@
                 android:text="Shuffle"
                 android:textColor="@color/black"
                 android:textAllCaps="false"/>
-            <!-- ...existing code removed extra closing tag ... -->
 
             <Button
                 android:id="@+id/favoriteBtn"
@@ -57,7 +56,6 @@
                 android:text="Playlists"
                 android:textColor="@color/black"
                 android:textAllCaps="false"/>
-            <!-- ...existing code removed extra closing tag ... -->
 
         </LinearLayout>
         <TextView
@@ -72,8 +70,64 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/musicRV"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             />
+        <!-- Mini Player Layout -->
+        <LinearLayout
+            android:id="@+id/miniPlayer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:background="@color/gray"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+            
+            <ImageView
+                android:id="@+id/miniArt"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/music_player_icon_foreground"/>
+            
+            <TextView
+                android:id="@+id/miniSongTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingStart="8dp"
+                android:text="Song Title"
+                android:textColor="@color/black"
+                android:textSize="18sp"/>
+            
+            <!-- Updated previous button -->
+            <ImageButton
+                android:id="@+id/miniPrevBtn"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="?attr/selectableItemBackground"
+                android:src="@drawable/previous_small_icon"
+                android:contentDescription="Previous"/>
+
+            <!-- Updated play/pause button -->
+            <ImageButton
+                android:id="@+id/miniPlayPauseBtn"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="?attr/selectableItemBackground"
+                android:src="@drawable/pause_icon"
+                android:contentDescription="Play/Pause"/>
+
+            <!-- New next button -->
+            <ImageButton
+                android:id="@+id/miniNextBtn"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="?attr/selectableItemBackground"
+                android:src="@drawable/next_icon"
+                android:contentDescription="Next"/>
+        </LinearLayout>
 
     </LinearLayout>
 

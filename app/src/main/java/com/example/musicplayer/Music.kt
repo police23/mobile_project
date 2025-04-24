@@ -7,8 +7,10 @@ data class Music(
     val artist: String,
     val path: String,
     val duration: Long = 0,
-    val artUri: String
+    val artUri: String,
+    var isFavorite: Boolean = false // added property for favorites
 ) {
     // Default constructor needed for some Android components
-    constructor() : this("", "", "", "", "", 0, "")
+    constructor() : this("", "", "", "", "", 0, "", false)
 }
+
