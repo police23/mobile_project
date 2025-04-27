@@ -1,8 +1,13 @@
 package com.example.musicplayer
 
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -11,13 +16,14 @@ import com.bumptech.glide.request.RequestOptions
 import com.example.musicplayer.database.MusicDatabaseHelper
 import com.example.musicplayer.databinding.ActivityPlayerBinding
 
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity : AppCompatActivity(), ServiceConnection {
 
     companion object {
         var musicListPA = ArrayList<Music>()
         var songPosition = 0
         var mediaPlayer : MediaPlayer? = null
         var isPlaying : Boolean = false
+        var musicService: MusicService? = null
 
         fun togglePlayback() {
             mediaPlayer?.let {
@@ -67,6 +73,10 @@ class PlayerActivity : AppCompatActivity() {
         setTheme(R.style.Theme_MusicPlayer)
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val intent = Intent(this, MusicService::class.java)
+        bindService(intent,this,BIND_AUTO_CREATE)
+        Log.d("bindService", "${bindService(intent,this,BIND_AUTO_CREATE)}")
+        startService(intent)
         dbHelper = MusicDatabaseHelper(this)
 
         // Added back button click listener
@@ -152,10 +162,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun createMediaPlayer() {
         try {
-            if (mediaPlayer == null) mediaPlayer = MediaPlayer()
-            mediaPlayer!!.reset()
-            mediaPlayer!!.setDataSource(musicListPA[songPosition].path)
-            mediaPlayer!!.prepare()
+            if (musicService!!.mediaPlayer == null) musicService!!.mediaPlayer = MediaPlayer()
+            musicService!!.mediaPlayer!!.reset()
+            musicService!!.mediaPlayer!!.setDataSource(musicListPA[songPosition].path)
+            musicService!!.mediaPlayer!!.prepare()
+            musicService!!.mediaPlayer!!.start()
             binding.tvSeekBarStart.text = formatDuration(mediaPlayer!!.currentPosition)
             binding.tvSeekBarEnd.text = formatDuration(mediaPlayer!!.duration)
 
@@ -211,7 +222,6 @@ class PlayerActivity : AppCompatActivity() {
                 } else {
                     songPosition = newIndex
                     setLayout()
-                    createMediaPlayer() // start new song or reinitialize
                 }
             }
             "MiniPlayer" -> {
@@ -225,7 +235,7 @@ class PlayerActivity : AppCompatActivity() {
             }
             else -> {
                 setLayout()
-                createMediaPlayer()
+//                createMediaPlayer()
             }
         }
     }
@@ -233,13 +243,13 @@ class PlayerActivity : AppCompatActivity() {
     private fun playMusic() {
         binding.playPauseBtnPA.setIconResource(R.drawable.pause_icon)
         isPlaying = true
-        mediaPlayer!!.start()
+        musicService!!.mediaPlayer!!.start()
     }
 
     private fun pauseMusic() {
         binding.playPauseBtnPA.setIconResource(R.drawable.play_icon)
         isPlaying = false
-        mediaPlayer!!.pause()
+        musicService!!.mediaPlayer!!.pause()
     }
 
     private fun updateFavoriteIcon() {
@@ -248,6 +258,18 @@ class PlayerActivity : AppCompatActivity() {
             binding.favouriteBtnPA.setImageResource(R.drawable.favorite_filled_icon)
         else
             binding.favouriteBtnPA.setImageResource(R.drawable.favorite_emp_icon)
+    }
+
+     override fun onServiceConnected(name : ComponentName?, service: IBinder?) {
+         Log.d("MusicService", "Service Connected!")
+        val binder = service as MusicService.MyBinder
+         musicService = binder.currentService()
+        createMediaPlayer()
+        musicService!!.showNotification()
+    }
+
+    override fun onServiceDisconnected(name: ComponentName?) {
+        musicService = null
     }
 
     override fun onDestroy() {

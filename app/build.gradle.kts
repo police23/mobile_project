@@ -60,5 +60,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.compose)
     annotationProcessor (libs.compiler)
-
+    implementation(libs.androidx.media)
 }
