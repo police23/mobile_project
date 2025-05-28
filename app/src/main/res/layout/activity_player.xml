@@ -45,7 +45,7 @@
             android:background="@android:color/transparent"
             android:contentDescription="@string/favourite_btn"
             android:src="@drawable/favorite_emp_icon"
-            app:tint="@android:color/holo_red_dark" />
+             />
 
     </LinearLayout>
 
@@ -85,6 +85,7 @@
 
         <!--        Previous Button-->
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/previousBtnPA"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             app:icon="@drawable/previous_icon"

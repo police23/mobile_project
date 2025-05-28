@@ -6,6 +6,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -15,6 +16,7 @@
         android:background="@color/cool_pink">
 
         <ImageButton
+            android:id="@+id/backBtnPL"
             android:layout_width="wrap_content"
             android:layout_height="50dp"
             android:src="@drawable/back_icon"
@@ -33,7 +35,19 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/playlistRV"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/linearLayout"
+        android:scrollbars="vertical"
+        android:paddingBottom="40dp"
+        android:layout_marginTop="10dp"/>
+
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/addPlayListBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:backgroundTint="@color/white"

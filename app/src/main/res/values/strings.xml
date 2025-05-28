@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MusicPlayer</string>
+    <string name="app_name">Music Player</string>
     <string name="shuff_btn">Shuffle</string>
     <string name="favorite_btn">Favorites</string>
     <string name="playlist_btn">Playlists</string>
@@ -23,8 +23,16 @@
     <string name="about">Về chúng tôi</string>
     <string name="exit">Thoát</string>
     <string name="song_album">Song Album</string>
-
-
-
+    <string name="download_btn">Download</string>
+    <string name="search_view">Search View</string>
+    <string name="song_img">Song Image</string>
+    <string name="playlist_name">Playlist Name</string>
+    <string name="user_name">User Name</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_playlist_details">PlaylistDetails</string>
+    <string name="add_song">Add Song</string>
+    <string name="remove_all">Remove All</string>
+    <string name="search_song">Search Song</string>
 
 </resources>

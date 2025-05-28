@@ -2,4 +2,8 @@
 <resources>
 
     <style name="Theme.MusicPlayer" parent="Theme.MaterialComponents.Light.NoActionBar" />
+
+    <style name="splash_screen" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+    </style>
 </resources>

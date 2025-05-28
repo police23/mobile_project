@@ -1,30 +1,110 @@
 package com.example.musicplayer
 
+import android.R.attr.type
+import android.R.id.toggle
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.SearchView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-
+import com.example.musicplayer.databinding.ActivityMainBinding
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+import kotlin.system.exitProcess
+import java.lang.reflect.Type
 class MainActivity : AppCompatActivity() {
-
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var toggle: ActionBarDrawerToggle
     companion object {
-        var MusicListMA = ArrayList<Music>()
+        lateinit var MusicListMA : ArrayList<Music>
+        lateinit var musicListSearch : ArrayList<Music>
+        var search: Boolean = false
+        var downloaded: Boolean = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main) // Set the main layout
+        setTheme(R.style.Theme_MusicPlayer) // Set the theme before setting the content view
+        binding = ActivityMainBinding.inflate(layoutInflater)
+
+        setContentView(binding.root) // Set the main layout
+
+
+        toggle = ActionBarDrawerToggle(this, binding.root, R.string.open, R.string.close)
+        binding.root.addDrawerListener(toggle)
+        toggle.syncState()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        //for storing favourites data using shared preferences
+        FavouriteActivity.favouriteSongs = ArrayList() // Initialize the favourite songs list
+        val editor = getSharedPreferences("FAVOURITES", MODE_PRIVATE)
+        val jsonString = editor.getString("FavouriteSongs", null)
+        val typeToken = object : TypeToken<ArrayList<Music>>() {}.type
+
+        if (jsonString != null) {
+            val data: ArrayList<Music> = GsonBuilder().create().fromJson(jsonString,typeToken)
+            FavouriteActivity.favouriteSongs.addAll(data)
+        }
+
+        PlaylistActivity.musicPlaylist = MusicPlaylist()
+        val jsonStringPlaylist = editor.getString("MusicPlaylist", null)
+        if(jsonStringPlaylist != null){
+            val dataPlaylist: MusicPlaylist = GsonBuilder().create().fromJson(jsonStringPlaylist, MusicPlaylist::class.java)
+            PlaylistActivity.musicPlaylist = dataPlaylist
+        }
+
+
+        binding.shuffleBtn.setOnClickListener {
+            val intent = Intent(this, PlayerActivity::class.java)
+            intent.putExtra("index", 0)
+            intent.putExtra("class", "MainActivity")
+            startActivity(intent)
+            Toast.makeText(this, "Shuffle Button Clicked", Toast.LENGTH_SHORT).show()
+        }
+        binding.favoriteBtn.setOnClickListener {
+            val intent = Intent(this, FavouriteActivity::class.java)
+            startActivity(intent)
+            Toast.makeText(this, "Favourite Button Clicked", Toast.LENGTH_SHORT).show()
+        }
+        binding.downloadBtn.setOnClickListener {
+            val intent = Intent(this, DownloadActivity::class.java)
+            startActivity(intent)
+            Toast.makeText(this, "Download Button Clicked", Toast.LENGTH_SHORT).show()
+        }
+        binding.playlistBtn.setOnClickListener {
+            val intent = Intent(this, PlaylistActivity::class.java)
+            startActivity(intent)
+            Toast.makeText(this, "Playlist Button Clicked", Toast.LENGTH_SHORT).show()
+        }
+        binding.navView.setOnClickListener {
+            when (it.id)
+            {
+                R.id.navSettings-> {
+                    Toast.makeText(this, "Settings Button Clicked", Toast.LENGTH_SHORT).show()
+                }
+                R.id.navAbout -> {
+                    Toast.makeText(this, "About Button Clicked", Toast.LENGTH_SHORT).show()
+                }
+                R.id.navExit -> exitProcess(1)
+            }
+            true
+        }
         requestRuntimePermission()
     }
 
@@ -61,15 +141,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadMusic() {
+    override fun onDestroy() {
+
+        super.onDestroy()
+        //for storing favourites data using shared preferences
+
+    }
+
+    fun loadMusic() {
         MusicListMA = getAllAudio() ?: ArrayList() // Ensure MusicListMA is not null
         if (MusicListMA.isEmpty()) {
             Toast.makeText(this, "No music found", Toast.LENGTH_SHORT).show()
         }
+
+
         // Initialize RecyclerView with MusicAdapter regardless of list content
         val recyclerView = findViewById<RecyclerView>(R.id.musicRV)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = MusicAdapter(this, MusicListMA)
+        recyclerView.setHasFixedSize(true)
+        recyclerView.setItemViewCacheSize(13)
+        recyclerView.layoutManager = LinearLayoutManager(this@MainActivity)
+        recyclerView.adapter = MusicAdapter(this@MainActivity, MusicListMA)
     }
 
     private fun getAllAudio(): ArrayList<Music>? {
@@ -88,6 +179,7 @@ class MainActivity : AppCompatActivity() {
         // Removed folder filtering to load all audio files
         val cursor = contentResolver.query(uri, projection, null, null, null)
         cursor?.use {
+            Log.d("MusicLoader", "Number of songs found: ${it.count}")
             if (it.moveToFirst()) {
                 do {
                     val id =
@@ -117,38 +209,39 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val miniPlayer = findViewById<LinearLayout>(R.id.miniPlayer)
-        val miniArt = findViewById<ImageView>(R.id.miniArt)
-        val miniSongTitle = findViewById<TextView>(R.id.miniSongTitle)
-        if (PlayerActivity.mediaPlayer != null && PlayerActivity.isPlaying && PlayerActivity.musicListPA.isNotEmpty()) {
-            miniPlayer.visibility = View.VISIBLE
-            val currentMusic = PlayerActivity.musicListPA[PlayerActivity.songPosition]
-            miniSongTitle.text = currentMusic.title
-            Glide.with(this)
-                .load(currentMusic.artUri)
-                .into(miniArt)
-            miniPlayer.setOnClickListener {
-                val intent = Intent(this, PlayerActivity::class.java)
-                intent.putExtra("index", PlayerActivity.songPosition)
-                intent.putExtra("class", "MiniPlayer")
-                startActivity(intent)
-            }
-            // Added initialization for mini player buttons
-            val miniPrevBtn = findViewById<ImageButton>(R.id.miniPrevBtn)
-            val miniPlayPauseBtn = findViewById<ImageButton>(R.id.miniPlayPauseBtn)
-            val miniNextBtn = findViewById<ImageButton>(R.id.miniNextBtn)
-
-            miniPlayPauseBtn.setOnClickListener {
-                if (PlayerActivity.isPlaying) {
-                    PlayerActivity.mediaPlayer?.pause()
-                    PlayerActivity.isPlaying = false
-                    miniPlayPauseBtn.setImageResource(R.drawable.play_icon)
-                } else {
-                    PlayerActivity.mediaPlayer?.start()
-                    PlayerActivity.isPlaying = true
-                    miniPlayPauseBtn.setImageResource(R.drawable.pause_icon)
-                }
-            }
+        if (downloaded) {
+            loadMusic()
+            Toast.makeText(this, "Downloaded songs are available in Downloads section", Toast.LENGTH_SHORT).show()
+            downloaded = false
         }
+        val editor = getSharedPreferences("FAVOURITES", MODE_PRIVATE).edit()
+        val jsonString = GsonBuilder().create().toJson(FavouriteActivity.favouriteSongs)
+        editor.putString("FavouriteSongs", jsonString)
+        editor.apply()
+        val jsonStringPlaylist = GsonBuilder().create().toJson(PlaylistActivity.musicPlaylist)
+        editor.putString("MusicPlaylist", jsonStringPlaylist)
+        editor.apply()
+
+
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (toggle.onOptionsItemSelected(item))
+            return true
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.search_view_menu,menu)
+        val searchView = menu?.findItem(R.id.searchView)?.actionView as SearchView
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean = true
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                Toast.makeText(this@MainActivity, "Searching for: $newText", Toast.LENGTH_SHORT).show()
+                return true
+            }
+        })
+        return super.onCreateOptionsMenu(menu)
     }
 }
