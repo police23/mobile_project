@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.util.Log
 import android.view.View
+import android.widget.NumberPicker
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -33,12 +34,11 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
         var fIndex : Int = -1
         @SuppressLint("StaticFieldLeak")
         lateinit var binding: ActivityPlayerBinding
-        var repeat: Boolean = false
-
+        var repeatMode: Int = 0 // 0: off, 1: repeat all, 2: repeat one
     }
 
-    private var repeatMode = 0  // 0: off, 1: repeat all, 2: repeat one
     private var timerRunnable: Runnable? = null
+    private var currentTimerOption = 0 // 0: Off, 1-8: predefined times, 9: custom
 
     private val handler = Handler()
     private lateinit var dbHelper: MusicDatabaseHelper
@@ -49,14 +49,10 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
         dbHelper = MusicDatabaseHelper(this)
-
-
 
         initializeLayout()
 
-        // Added back button click listener
         binding.backBtnPA.setOnClickListener { finish() }
         binding.favouriteBtnPA.setOnClickListener {
             fIndex = favouriteChecker(musicListPA[songPosition].id)
@@ -82,25 +78,30 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             prevNextSong(increment = true)
         }
         binding.repeatBtnPA.setOnClickListener {
-            if(!repeat){
-                repeat = true
-                binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_blue))
-            }else{
-                repeat = false
-                binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_pink))
+            when(repeatMode) {
+                0 -> {
+                    repeatMode = 1
+                    binding.repeatBtnPA.setImageResource(R.drawable.repeat_icon)
+                    binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_blue))
+                    Toast.makeText(this, "Repeat Playlist", Toast.LENGTH_SHORT).show()
+                }
+                1 -> {
+                    repeatMode = 2
+                    binding.repeatBtnPA.setImageResource(R.drawable.repeat_one_icon)
+                    binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_blue))
+                    Toast.makeText(this, "Repeat Song", Toast.LENGTH_SHORT).show()
+                }
+                2 -> {
+                    repeatMode = 0
+                    binding.repeatBtnPA.setImageResource(R.drawable.repeat_off_icon)
+                    binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_pink))
+                    Toast.makeText(this, "Repeat Off", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
         binding.timerBtnPA.setOnClickListener {
-            val times = arrayOf("5", "10", "15", "30", "45", "60", "90", "120")
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Select Timer (minutes)")
-                .setItems(times) { dialog, which ->
-                    val minutes = times[which].toInt()
-                    scheduleTimer(minutes)
-                    Toast.makeText(this, "Timer set for $minutes minutes", Toast.LENGTH_SHORT).show()
-                }
-                .show()
+            showTimerOptions()
         }
 
         binding.seekBarPA.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -112,11 +113,91 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
         })
     }
 
+    private fun showTimerOptions() {
+        val times = arrayOf("Off", "5", "10", "15", "30", "45", "60", "90", "120", "Custom")
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Select Timer (minutes)")
+            .setSingleChoiceItems(times, currentTimerOption) { dialog, which ->
+                if (which == 0) {
+                    // Off option selected - cancel timer
+                    timerRunnable?.let { 
+                        handler.removeCallbacks(it)
+                        timerRunnable = null
+                        Toast.makeText(this, "Timer turned off", Toast.LENGTH_SHORT).show()
+                    }
+                    currentTimerOption = 0
+                    dialog.dismiss()
+                } else if (which == times.size - 1) {
+                    // Custom option selected - show time picker dialog
+                    dialog.dismiss()
+                    showCustomTimerDialog()
+                } else {
+                    val minutes = times[which].toInt()
+                    scheduleTimer(minutes)
+                    Toast.makeText(this, "Timer set for $minutes minutes", Toast.LENGTH_SHORT).show()
+                    currentTimerOption = which
+                    dialog.dismiss()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showCustomTimerDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.custom_timer_dialog, null)
+        val hourPicker = dialogView.findViewById<NumberPicker>(R.id.hourPicker)
+        val minutePicker = dialogView.findViewById<NumberPicker>(R.id.minutePicker)
+        
+        // Configure hour picker
+        hourPicker.minValue = 0
+        hourPicker.maxValue = 23
+        
+        // Configure minute picker
+        minutePicker.minValue = 0
+        minutePicker.maxValue = 59
+        
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Set Custom Timer")
+            .setView(dialogView)
+            .setPositiveButton("Set") { _, _ ->
+                val hours = hourPicker.value
+                val minutes = minutePicker.value
+                
+                if (hours == 0 && minutes == 0) {
+                    Toast.makeText(this, "Timer cannot be 0 minutes", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                val totalMinutes = (hours * 60) + minutes
+                scheduleTimer(totalMinutes)
+                
+                val timeMessage = buildString {
+                    if (hours > 0) {
+                        append("$hours hour")
+                        if (hours > 1) append("s")
+                        if (minutes > 0) append(" and ")
+                    }
+                    if (minutes > 0 || hours == 0) {
+                        append("$minutes minute")
+                        if (minutes > 1) append("s")
+                    }
+                }
+                Toast.makeText(this, "Timer set for $timeMessage", Toast.LENGTH_SHORT).show()
+                currentTimerOption = 9  // Custom option
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+            
+        dialog.show()
+    }
+
     private fun scheduleTimer(minutes: Int) {
         timerRunnable?.let { handler.removeCallbacks(it) }
         timerRunnable = Runnable {
             pauseMusic()
             Toast.makeText(this, "Timer ended. Music stopped.", Toast.LENGTH_SHORT).show()
+            currentTimerOption = 0 // Reset to Off when timer completes
         }
         handler.postDelayed(timerRunnable!!, minutes * 60 * 1000L)
     }
@@ -128,20 +209,23 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             .apply(RequestOptions().placeholder(R.drawable.music_player_icon_screen).centerCrop())
             .into(binding.songImgPA)
         binding.songNamePA.text = musicListPA[songPosition].title
-        if (repeat) binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_blue))
-        Log.d("Favourite", "isFavourite: $isFavourite")
+
+        when(repeatMode) {
+            0 -> binding.repeatBtnPA.setImageResource(R.drawable.repeat_off_icon)
+            1 -> {
+                binding.repeatBtnPA.setImageResource(R.drawable.repeat_icon)
+                binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_blue))
+            }
+            2 -> {
+                binding.repeatBtnPA.setImageResource(R.drawable.repeat_one_icon)
+                binding.repeatBtnPA.setColorFilter(ContextCompat.getColor(this, R.color.cool_blue))
+            }
+        }
+
         if (isFavourite) {
-            Log.d("Favourite", "Song is favourite at index: $fIndex")
-
             binding.favouriteBtnPA.setImageResource(R.drawable.favorite_icon)
-
-
-            Log.d("Favourite", "the icon is set to favourite filled icon")
-
         } else {
-            Log.d("Favourite", "Song is not favourite at index: $fIndex")
             binding.favouriteBtnPA.setImageResource(R.drawable.favorite_emp_icon)
-            Log.d("Favourite", "the icon is set to favourite emp icon")
         }
     }
 
@@ -153,21 +237,7 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             musicService!!.mediaPlayer!!.prepare()
             musicService!!.mediaPlayer!!.start()
 
-//            binding.tvSeekBarStart.text = formatDuration(mediaPlayer!!.currentPosition)
-//            binding.tvSeekBarEnd.text = formatDuration(mediaPlayer!!.duration)
-
-//            if (repeatMode == 1) {
-//                mediaPlayer!!.setOnCompletionListener {
-//                    songPosition = (songPosition + 1) % musicListPA.size
-//                    setLayout()
-//                    createMediaPlayer()
-//                }
-//            } else {
-//                mediaPlayer!!.setOnCompletionListener(null)
-//            }
-//
-//            if (repeatMode != 2) mediaPlayer!!.isLooping = false
-
+            musicService!!.mediaPlayer!!.isLooping = (repeatMode == 2)
 
             isPlaying = true
             binding.playPauseBtnPA.setIcon(ContextCompat.getDrawable(this, R.drawable.pause_icon))
@@ -178,7 +248,6 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             binding.seekBarPA.max = musicService!!.mediaPlayer!!.duration
             musicService!!.mediaPlayer!!.setOnCompletionListener(this)
             nowPlayingId = musicListPA[songPosition].id
-//            updateSeekBar()
         } catch (e: Exception) {
             return
         }
@@ -210,7 +279,6 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             "PlaylistDetailsAdapter"->{
                 val intent = Intent(this, MusicService::class.java)
                 bindService(intent,this,BIND_AUTO_CREATE)
-                Log.d("bindService", "${bindService(intent,this,BIND_AUTO_CREATE)}")
                 startService(intent)
                 musicListPA = ArrayList(PlaylistActivity.musicPlaylist.ref[PlaylistDetails.currentPlaylistPos].playlist)
                 setLayout()
@@ -219,7 +287,6 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             "FavouriteAdapter"-> {
                 val intent = Intent(this, MusicService::class.java)
                 bindService(intent,this,BIND_AUTO_CREATE)
-                Log.d("bindService", "${bindService(intent,this,BIND_AUTO_CREATE)}")
                 startService(intent)
                 musicListPA = ArrayList(FavouriteActivity.favouriteSongs)
                 setLayout()
@@ -239,7 +306,6 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             "MusicAdapter" -> {
                 val intent = Intent(this, MusicService::class.java)
                 bindService(intent,this,BIND_AUTO_CREATE)
-                Log.d("bindService", "${bindService(intent,this,BIND_AUTO_CREATE)}")
                 startService(intent)
                 musicListPA = ArrayList(MainActivity.MusicListMA)
                 setLayout()
@@ -248,7 +314,6 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             "MainActivity" -> {
                 val intent = Intent(this, MusicService::class.java)
                 bindService(intent,this,BIND_AUTO_CREATE)
-                Log.d("bindService", "${bindService(intent,this,BIND_AUTO_CREATE)}")
                 startService(intent)
                 musicListPA = ArrayList(MainActivity.MusicListMA)
                 musicListPA.shuffle()
@@ -258,7 +323,6 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             "PlaylistDetailsShuffle"->{
                 val intent = Intent(this, MusicService::class.java)
                 bindService(intent,this,BIND_AUTO_CREATE)
-                Log.d("bindService", "${bindService(intent,this,BIND_AUTO_CREATE)}")
                 startService(intent)
                 musicListPA = ArrayList(PlaylistActivity.musicPlaylist.ref[PlaylistDetails.currentPlaylistPos].playlist)
                 musicListPA.shuffle()
@@ -302,15 +366,11 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
             binding.favouriteBtnPA.setImageResource(R.drawable.favorite_emp_icon)
     }
 
-
-
      override fun onServiceConnected(name : ComponentName?, service: IBinder?) {
-         Log.d("MusicService", "Service Connected!")
         val binder = service as MusicService.MyBinder
-         musicService = binder.currentService()
+        musicService = binder.currentService()
         createMediaPlayer()
-//        musicService!!.showNotification(R.drawable.pause_icon)
-         musicService!!.seekBarSetup()
+        musicService!!.seekBarSetup()
     }
 
     override fun onServiceDisconnected(name: ComponentName?) {
@@ -323,8 +383,26 @@ class PlayerActivity : AppCompatActivity(), ServiceConnection, MediaPlayer.OnCom
     }
 
     override fun onCompletion(mp: MediaPlayer?) {
-        setSongPosition(increment = true)
-        createMediaPlayer()
-        setLayout()
+        if(repeatMode == 2) {
+            mp?.seekTo(0)
+            mp?.start()
+            return
+        } else if(repeatMode == 1) {
+            setSongPosition(increment = true)
+            createMediaPlayer()
+            setLayout()
+        } else {
+            if(songPosition < musicListPA.size - 1) {
+                setSongPosition(increment = true)
+                createMediaPlayer()
+                setLayout()
+            } else {
+                pauseMusic()
+                songPosition = 0
+                setLayout()
+                binding.seekBarPA.progress = 0
+                binding.tvSeekBarStart.text = "0:00"
+            }
+        }
     }
 }

@@ -29,20 +29,19 @@ fun formatSongDuration(duration: Long): String {
 }
 
 fun setSongPosition(increment: Boolean) {
-    if (!PlayerActivity.repeat)
-    {
-        if (increment) {
-            if (musicListPA.size - 1 == songPosition) {
-                songPosition = 0
-            } else {
-                ++songPosition
-            }
+    // For repeat one (mode 2), position change is handled in onCompletion
+    // This handles normal playback (mode 0) and repeat all (mode 1)
+    if (increment) {
+        if (musicListPA.size - 1 == songPosition) {
+            songPosition = 0
         } else {
-            if (songPosition == 0) {
-                songPosition = musicListPA.size - 1
-            } else {
-                --songPosition
-            }
+            ++songPosition
+        }
+    } else {
+        if (songPosition == 0) {
+            songPosition = musicListPA.size - 1
+        } else {
+            --songPosition
         }
     }
 }

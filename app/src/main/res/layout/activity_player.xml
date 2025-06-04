@@ -161,7 +161,7 @@
             android:id="@+id/repeatBtnPA"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:src="@drawable/repeat_icon"
+            android:src="@drawable/repeat_off_icon"
             android:background="?attr/selectableItemBackground"
             android:contentDescription="@string/repeat_btn"
             android:layout_weight="1"

@@ -38,7 +38,7 @@ class MusicDownloadAdapter(private var tracks: List<Map<String, String>> ) :
             val context = holder.itemView.context
             val songName = "${track["name"]} ${track["artistName"]}"
             val encodedSongName = java.net.URLEncoder.encode(songName, "UTF-8")
-            val apiUrl = "http://10.0.107.239:5000/download?song_name=$encodedSongName"
+            val apiUrl = "http://192.168.1.167:5000/download?song_name=$encodedSongName"
 
 
             // Gửi request trên luồng nền
@@ -51,7 +51,7 @@ class MusicDownloadAdapter(private var tracks: List<Map<String, String>> ) :
                     val response = inputStream.bufferedReader().use { it.readText() }
 
                     val json = org.json.JSONObject(response)
-                    val downloadUrl = "http://10.0.107.239:5000" + json.getString("download_url")
+                    val downloadUrl = "http://192.168.1.167:5000" + json.getString("download_url")
                     val videoTitle = json.getString("video_title")
 
                     // Dùng DownloadManager để tải file .mp3
