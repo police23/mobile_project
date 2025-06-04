@@ -1,114 +1,142 @@
 package com.example.musicplayer
-import android.annotation.SuppressLint
+
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.musicplayer.databinding.MusicViewBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class MusicAdapter(private val context: Context, private var musicList: ArrayList<Music>, private var playlistDetails : Boolean = false, private val selectionActivity: Boolean = false) : RecyclerView.Adapter<MusicAdapter.MyHolder>() {
+class MusicAdapter(
+    private val context: Context,
+    private var musicList: ArrayList<Music>,
+    private val playlistDetails: Boolean = false,
+    private val selectionActivity: Boolean = false
+) : RecyclerView.Adapter<MusicAdapter.MyHolder>() {
+
     class MyHolder(binding: MusicViewBinding) : RecyclerView.ViewHolder(binding.root) {
-        var title = binding.songNameMV
-        var album = binding.songAlbumMV
-        var image = binding.imageMV
-        var duration = binding.songDuration
-        var root = binding.root
+        val title = binding.songNameMV
+        val album = binding.songAlbumMV
+        val image = binding.imageMV
+        val duration = binding.songDuration
+        val root = binding.root
+        val checkbox = binding.checkboxMV  // Add reference to the checkbox
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicAdapter.MyHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyHolder {
         return MyHolder(MusicViewBinding.inflate(LayoutInflater.from(context), parent, false))
     }
 
-    @SuppressLint("SetTextI18n")
-    override fun onBindViewHolder(holder: MusicAdapter.MyHolder, position: Int) {
+    override fun onBindViewHolder(holder: MyHolder, position: Int) {
         holder.title.text = musicList[position].title
         holder.album.text = musicList[position].album
         holder.duration.text = formatSongDuration(musicList[position].duration)
         Glide.with(context)
             .load(musicList[position].artUri)
-            .apply(RequestOptions().placeholder(R.drawable.music_player_icon_screen).centerCrop())
+            .apply(RequestOptions().placeholder(R.drawable.music_player_icon_splash_screen).centerCrop())
             .into(holder.image)
-        when {
-            playlistDetails -> {
-                holder.root.setOnClickListener {
-                    sendIntent(ref = "PlaylistDetailsAdapter", pos = position)
+        
+        // Show checkbox only in selection mode
+        if(selectionActivity) {
+            holder.checkbox.visibility = View.VISIBLE
+            // Set checkbox state based on selection list
+            holder.checkbox.isChecked = SelectionActivity.selectedSongs.contains(musicList[position])
+        } else {
+            holder.checkbox.visibility = View.GONE
+        }
+        
+        // Click event for playing the song
+        holder.root.setOnClickListener {
+            when {
+                selectionActivity -> {
+                    // Toggle selection instead of immediate add
+                    toggleSelection(position)
+                    notifyItemChanged(position)
+                    // Update the selection counter in SelectionActivity
+                    (context as SelectionActivity).updateSelectionCounter()
                 }
-            }
-
-            selectionActivity -> {
-                holder.root.setOnClickListener {
-                    if (addSong(musicList[position]))
-                        holder.root.setBackgroundColor(
-                            ContextCompat.getColor(
-                                context,
-                                R.color.cool_pink
-                            )
-                        )
-                    else
-                        holder.root.setBackgroundColor(
-                            ContextCompat.getColor(
-                                context,
-                                R.color.white
-                            )
-                        )
-
+                playlistDetails -> {
+                    val intent = Intent(context, PlayerActivity::class.java)
+                    intent.putExtra("index", position)
+                    intent.putExtra("class", "PlaylistDetails")
+                    ContextCompat.startActivity(context, intent, null)
                 }
-            }
-            else -> {
-                holder.root.setOnClickListener {
-                    when {
-
-                        musicList[position].id == PlayerActivity.nowPlayingId ->
-                            sendIntent(ref = "NowPlaying", pos = PlayerActivity.songPosition)
-
-                        else -> sendIntent(ref = "MusicAdapter", pos = position)
-                    }
+                else -> {
+                    val intent = Intent(context, PlayerActivity::class.java)
+                    intent.putExtra("index", position)
+                    intent.putExtra("class", "MusicAdapter")
+                    ContextCompat.startActivity(context, intent, null)
                 }
             }
         }
-//            val intent = Intent(context, PlayerActivity::class.java)
-//            intent.putExtra("index", position)
-//            intent.putExtra("class", "MusicAdapter")
-//            ContextCompat.startActivity(context, intent, null)
+
+        // Long press event for deleting song from playlist
+        holder.root.setOnLongClickListener {
+            if (playlistDetails) {
+                val builder = MaterialAlertDialogBuilder(context)
+                builder.setTitle(musicList[position].title)
+                    .setMessage("Do you want to remove this song from playlist?")
+                    .setPositiveButton("Yes") { dialog, _ ->
+                        val currentPlaylistPos = PlaylistDetails.currentPlaylistPos
+                        PlaylistActivity.musicPlaylist.ref[currentPlaylistPos].playlist.removeAt(position)
+                        refreshPlaylist()
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton("No") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                val customDialog = builder.create()
+                customDialog.show()
+                return@setOnLongClickListener true
+            }
+            false
+        }
+
+        // Add checkbox click handler
+        holder.checkbox.setOnClickListener {
+            toggleSelection(position)
+            (context as SelectionActivity).updateSelectionCounter()
+        }
+    }
+
+    private fun toggleSelection(position: Int) {
+        val song = musicList[position]
+        if(SelectionActivity.selectedSongs.contains(song)) {
+            SelectionActivity.selectedSongs.remove(song)
+        } else {
+            SelectionActivity.selectedSongs.add(song)
+        }
     }
 
     override fun getItemCount(): Int {
         return musicList.size
     }
-    private fun sendIntent(ref: String, pos: Int){
-        val intent = Intent(context, PlayerActivity::class.java)
-        intent.putExtra("index", pos)
-        intent.putExtra("class", ref)
-        ContextCompat.startActivity(context, intent, null)
-    }
-    private fun addSong(song: Music): Boolean{
-        PlaylistActivity.musicPlaylist.ref[PlaylistDetails.currentPlaylistPos].playlist.forEachIndexed { index, music ->
-            if(song.id == music.id){
-                PlaylistActivity.musicPlaylist.ref[PlaylistDetails.currentPlaylistPos].playlist.removeAt(index)
-                return false
-            }
-        }
-        Log.d("MusicAdapter", "Adding song: ${song.title} to playlist at position: ${PlaylistDetails.currentPlaylistPos}")
-        PlaylistActivity.musicPlaylist.ref[PlaylistDetails.currentPlaylistPos].playlist.add(song)
-        return true
-    }
-    fun refreshPlaylist(){
+
+    fun refreshPlaylist() {
         musicList = ArrayList()
         musicList = PlaylistActivity.musicPlaylist.ref[PlaylistDetails.currentPlaylistPos].playlist
         notifyDataSetChanged()
     }
-    fun updateMusicList(searchList : ArrayList<Music>){
+    
+    fun updateMusicList(searchList: ArrayList<Music>) {
         musicList = ArrayList()
         musicList.addAll(searchList)
         notifyDataSetChanged()
     }
+
+    fun selectAll() {
+        SelectionActivity.selectedSongs.clear()
+        SelectionActivity.selectedSongs.addAll(musicList)
+        notifyDataSetChanged()
+    }
+
+    fun clearSelections() {
+        SelectionActivity.selectedSongs.clear()
+        notifyDataSetChanged()
+    }
 }
-
-
-
-

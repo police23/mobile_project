@@ -34,5 +34,8 @@
     <string name="add_song">Add Song</string>
     <string name="remove_all">Remove All</string>
     <string name="search_song">Search Song</string>
-
+    <string name="selection_btn">Select Songs</string>
+    <string name="select_all">Select All</string>
+    <string name="clear_selection">Clear</string>
+    <string name="add_selected">Add Selected Songs</string>
 </resources>

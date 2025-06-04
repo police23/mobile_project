@@ -64,12 +64,9 @@ class PlaylistDetails : AppCompatActivity() {
                 }
             val customDialog = builder.create()
             customDialog.show()
-
-//            setDialogBtnBackground(this, customDialog)
         }
-
-
     }
+
     override fun onResume() {
         super.onResume()
         binding.playlistNamePD.text =
@@ -87,7 +84,8 @@ class PlaylistDetails : AppCompatActivity() {
             binding.shuffleBtnPD.visibility = View.VISIBLE
         }
         adapter.notifyDataSetChanged()
-//        //for storing favourites data using shared preferences
+        
+        // Save playlist changes when returning to this activity
         val editor = getSharedPreferences("FAVOURITES", MODE_PRIVATE).edit()
         val jsonStringPlaylist = GsonBuilder().create().toJson(PlaylistActivity.musicPlaylist)
         editor.putString("MusicPlaylist", jsonStringPlaylist)
