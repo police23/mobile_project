@@ -26,12 +26,6 @@ class PlaylistActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPlaylistBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        val tempList = ArrayList<String>()
-        tempList.add("Playlist 1")
-        tempList.add("Playlist 2")
-        tempList.add("Playlist 3")
-        tempList.add("Playlist 4")
-        tempList.add("Playlist 5")
         binding.playlistRV.setHasFixedSize(true)
         binding.playlistRV.setItemViewCacheSize(13)
         binding.playlistRV.layoutManager = GridLayoutManager(this@PlaylistActivity, 2)
@@ -50,11 +44,11 @@ class PlaylistActivity : AppCompatActivity() {
             .setTitle("Playlist Details")
             .setPositiveButton("ADD"){ dialog, _ ->
                 val playlistName = binder.playlistName.text
-                val createdBy = binder.yourName.text
-                if(playlistName != null && createdBy != null)
-                    if(playlistName.isNotEmpty() && createdBy.isNotEmpty())
+
+                if(playlistName != null)
+                    if(playlistName.isNotEmpty())
                     {
-                        addPlaylist(playlistName.toString(), createdBy.toString())
+                        addPlaylist(playlistName.toString())
                     }
                 dialog.dismiss()
             }
@@ -64,7 +58,7 @@ class PlaylistActivity : AppCompatActivity() {
 
     }
 
-    private fun addPlaylist(name: String, createdBy: String){
+    private fun addPlaylist(name: String){
         var playlistExists = false
         for(i in musicPlaylist.ref) {
             if (name == i.name){
@@ -77,7 +71,6 @@ class PlaylistActivity : AppCompatActivity() {
             val tempPlaylist = Playlist()
             tempPlaylist.name = name
             tempPlaylist.playlist = ArrayList()
-            tempPlaylist.createdBy = createdBy
             val calendar = Calendar.getInstance().time
             val sdf = SimpleDateFormat("dd MM yyyy", Locale.ENGLISH)
             tempPlaylist.createdOn = sdf.format(calendar)

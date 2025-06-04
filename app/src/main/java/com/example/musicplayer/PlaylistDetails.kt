@@ -74,9 +74,8 @@ class PlaylistDetails : AppCompatActivity() {
         super.onResume()
         binding.playlistNamePD.text =
             PlaylistActivity.musicPlaylist.ref[currentPlaylistPos].name
-        binding.moreInfoPD.text = "Total ${adapter.itemCount} Songs.\n\n" +
-                "Created On:\n${PlaylistActivity.musicPlaylist.ref[currentPlaylistPos].createdOn}\n\n" +
-                "  -- ${PlaylistActivity.musicPlaylist.ref[currentPlaylistPos].createdBy}"
+        binding.moreInfoPD.text =
+                "Created On:\n${PlaylistActivity.musicPlaylist.ref[currentPlaylistPos].createdOn}\n\n"
         if (adapter.itemCount > 0) {
             Glide.with(this)
                 .load(PlaylistActivity.musicPlaylist.ref[currentPlaylistPos].playlist[0].artUri)
