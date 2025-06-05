@@ -34,40 +34,11 @@
             android:layout_height="match_parent"
             android:contentDescription="@string/playlist_btn"
             android:gravity="center"
+            android:singleLine="true"
             android:text="@string/playlist_btn"
             android:textColor="@color/white"
             android:textSize="25sp"
-            android:textStyle="bold"
-            android:singleLine="true"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayoutDetails"
-        android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:orientation="horizontal"
-        android:background="@color/cool_pink"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/linearLayout"
-        android:layout_marginTop="10dp">
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/playlistImgPD"
-            android:layout_width="150dp"
-            android:layout_height="150dp"
-            android:layout_gravity="center_vertical"
-            android:src="@drawable/music_player_icon_splash_screen"
-            />
-        <TextView
-            android:id="@+id/moreInfoPD"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="@string/playlist_name"
-            android:gravity="center|start"
-            android:layout_marginHorizontal="5dp"
-            android:background="@color/cool_pink"
-            android:textColor="@color/white"
-            android:textSize="16sp" />
+            android:textStyle="bold" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -76,7 +47,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/linearLayoutDetails"
+        app:layout_constraintTop_toBottomOf="@id/linearLayout"
         android:scrollbars="vertical"
         android:paddingBottom="280dp"
         android:layout_marginTop="10dp"/>
